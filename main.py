@@ -15,16 +15,16 @@ def select_monitor(monitors):
         try:
             choice = int(input("Select a monitor by number: "))
             if 1 <= choice <= len(monitors):
-                return monitors[choice - 1]['id']
+                return monitors[choice - 1]['id'], monitors[choice - 1]['name']
             else:
                 print("Invalid choice. Please select a valid monitor number.")
         except ValueError:
             print("Please enter a number.")
 
-def create_maintenance(api, monitor_id, description):
+def create_maintenance(api, monitor_id, monitor_name, description):
     now = datetime.now()
     res = api.add_maintenance(
-        title=f"Maintenance for monitor {monitor_id}",
+        title=f"Maintenance for monitor - {monitor_name}",
         description=description,
         strategy=MaintenanceStrategy.SINGLE,
         active=True,
@@ -40,7 +40,17 @@ def create_maintenance(api, monitor_id, description):
         timezoneOption="UTC"
     )
     api.add_monitor_maintenance(res["maintenanceID"], [{"id": monitor_id}])
-    print(f"Monitor {monitor_id} is now under maintenance with ID {res['maintenanceID']}")
+    print(f"Monitor {monitor_name} is now under maintenance with ID {res['maintenanceID']}")
+
+    # Add the maintenance to all status pages
+    status_pages = api.get_status_pages()
+    status_page_ids = [{"id": page['id']} for page in status_pages]
+
+    if status_page_ids:
+        response = api.add_status_page_maintenance(res["maintenanceID"], status_page_ids)
+        print(f"Maintenance added to all status pages: {response['msg']}")
+    else:
+        print("No status pages found.")
 
 def list_maintenances(api):
     maintenances = api.get_maintenances()
@@ -110,9 +120,9 @@ def main():
     else:
         print("Fetching monitors...")
         monitors = list_monitors(api)
-        monitor_id = select_monitor(monitors)
+        monitor_id, monitor_name = select_monitor(monitors)
         description = input("Enter a description for the maintenance: ")
-        create_maintenance(api, monitor_id, description)
+        create_maintenance(api, monitor_id, monitor_name, description)
 
     api.disconnect()
 
