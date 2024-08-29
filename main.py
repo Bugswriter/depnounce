@@ -103,9 +103,6 @@ def main():
                 print("Failed to login with TOTP.")
                 return
 
-    api.disconnect()
-    quit()
-
     if args.remove:
         print("\nListing all maintenances...")
         list_maintenances(api)
