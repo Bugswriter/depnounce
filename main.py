@@ -1,3 +1,4 @@
+import os
 import argparse
 from dotenv import load_dotenv
 from uptime_kuma_api import UptimeKumaApi, MaintenanceStrategy
