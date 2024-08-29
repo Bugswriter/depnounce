@@ -9,3 +9,4 @@ __pycache__/
 depnounce.egg-info/
 my_cli_tool.egg-info/
 build/
+.token

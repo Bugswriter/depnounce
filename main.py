@@ -55,6 +55,15 @@ def remove_maintenance(api):
     except ValueError:
         print("Invalid ID. Please enter a valid maintenance ID.")
 
+
+def save_token(token, filename=".token"):
+    with open(filename, "w") as file:
+        file.write(token)
+
+def load_token(filename=".token"):
+    with open(filename, "r") as file:
+        return file.read().strip()
+
 def main():
     load_dotenv()
     parser = argparse.ArgumentParser(description="Manage Uptime Kuma monitors.")
@@ -66,7 +75,36 @@ def main():
     kuma_pass = os.getenv('KUMA_PASS')
 
     api = UptimeKumaApi(kuma_host)
-    api.login(kuma_user, kuma_pass)
+
+    if os.path.exists(".token"):
+        # Load and use the saved token
+        token = load_token(".token")
+        login_response = api.login_by_token(token)
+        if not login_response:  # If the response is an empty dictionary, login was successful
+            print("Re-logged in with saved token.")
+        else:
+            print("Failed to login with saved token. Please delete the .token file and try again.")
+            return
+
+    else:
+        # Perform the initial login with username, password, and TOTP
+        res = api.login(kuma_user, kuma_pass)
+
+        if res.get('tokenRequired'):
+            totp_token= str(input("Enter your TOTP secret: "))
+            res = api.login(kuma_user, kuma_pass, totp_token)
+
+            if 'token' in res:
+                # Save the token to a file
+                print(res['token'])
+                save_token(res['token'])
+                print("Login successful and token saved.")
+            else:
+                print("Failed to login with TOTP.")
+                return
+
+    api.disconnect()
+    quit()
 
     if args.remove:
         print("\nListing all maintenances...")
