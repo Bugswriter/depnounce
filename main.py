@@ -27,7 +27,7 @@ def select_monitor(monitors):
 
 def send_slack_notification(webhook_url, header, msg):
     slack_message = {
-        "text": f"*{header}* \n\n 🚧 🚧 🚧 🚧 🚧  \n\n {msg} \n\n <!channel>",
+        "text": f"{header} \n\n 🚧 🚧 🚧 🚧 🚧  \n\n {msg} \n\n <!channel>",
         "mrkdwn": True  # Enable markdown for formatting
     }
 
@@ -152,7 +152,7 @@ def main():
         print("(^__^) Fetching monitors...")
         monitors = list_monitors(api)
         monitor_id, monitor_name = select_monitor(monitors)
-        title = f"🚀 *Deployment Announce* -\n\n *{monitor_name} is now under maintenance*"
+        title = f"🚀 *Deployment Announce* -\n\n *{monitor_name}* is now under maintenance"
         description = capture_multiline_input()
         print("(^__^) wait...")
 
