@@ -1,5 +1,8 @@
 import os
+import sys
 import argparse
+import requests
+import json
 from dotenv import load_dotenv
 from uptime_kuma_api import UptimeKumaApi, MaintenanceStrategy
 from datetime import datetime, timedelta
@@ -13,13 +16,31 @@ def list_monitors(api):
 def select_monitor(monitors):
     while True:
         try:
-            choice = int(input("Select a monitor by number: "))
+            choice = int(input("(^__^) Select a monitor by number: "))
             if 1 <= choice <= len(monitors):
                 return monitors[choice - 1]['id'], monitors[choice - 1]['name']
             else:
                 print("Invalid choice. Please select a valid monitor number.")
         except ValueError:
             print("Please enter a number.")
+
+
+def send_slack_notification(webhook_url, header, msg):
+    slack_message = {
+        "text": f"*{header}* \n\n {msg} \n\n <!channel>",
+        "mrkdwn": True  # Enable markdown for formatting
+    }
+
+    response = requests.post(
+        webhook_url,
+        data=json.dumps(slack_message),
+        headers={'Content-Type': 'application/json'}
+    )
+
+    if response.status_code == 200:
+        print("Notification sent successfully!")
+    else:
+        print(f"Failed to send notification. Status code: {response.status_code}, Response: {response.text}")
 
 def create_maintenance(api, monitor_id, monitor_name, description):
     now = datetime.now()
@@ -59,11 +80,14 @@ def list_maintenances(api):
 
 def remove_maintenance(api):
     maintenance_id = input("Enter the maintenance ID to remove: ")
+
     try:
         api.delete_maintenance(int(maintenance_id))
         print(f"Maintenance with ID {maintenance_id} removed.")
     except ValueError:
         print("Invalid ID. Please enter a valid maintenance ID.")
+
+    return maintenance_id
 
 
 def save_token(token, filename=".token"):
@@ -74,6 +98,11 @@ def load_token(filename=".token"):
     with open(filename, "r") as file:
         return file.read().strip()
 
+def capture_multiline_input():
+    print("Enter a description for the maintenance: (press Ctrl+D or Ctrl+Z on Windows to finish):")
+    input_lines = sys.stdin.read()  # Read until EOF (Ctrl+D or Ctrl+Z)
+    return input_lines
+
 def main():
     load_dotenv()
     parser = argparse.ArgumentParser(description="Manage Uptime Kuma monitors.")
@@ -83,6 +112,7 @@ def main():
     kuma_host = os.getenv('KUMA_HOST')
     kuma_user = os.getenv('KUMA_USER')
     kuma_pass = os.getenv('KUMA_PASS')
+    slack_hook = os.getenv('SLACK_HOOK')
 
     api = UptimeKumaApi(kuma_host)
 
@@ -101,27 +131,34 @@ def main():
         res = api.login(kuma_user, kuma_pass)
 
         if res.get('tokenRequired'):
-            totp_token= str(input("Enter your TOTP secret: "))
+            totp_token= str(input("(^__^) Enter your TOTP secret: "))
             res = api.login(kuma_user, kuma_pass, totp_token)
 
             if 'token' in res:
                 # Save the token to a file
                 print(res['token'])
                 save_token(res['token'])
-                print("Login successful and token saved.")
+                print("(^__^) Login successful and token saved.")
             else:
-                print("Failed to login with TOTP.")
+                print("(;__;) Failed to login with TOTP.")
                 return
 
     if args.remove:
-        print("\nListing all maintenances...")
+        print("\n (^__^) Listing all maintenances...")
         list_maintenances(api)
-        remove_maintenance(api)
+        _id = remove_maintenance(api)
+        send_slack_notification(slack_hook, "🚀 Deployment Done" , f"Maintenance ID: {_id}")
     else:
-        print("Fetching monitors...")
+        print("(^__^) Fetching monitors...")
         monitors = list_monitors(api)
         monitor_id, monitor_name = select_monitor(monitors)
-        description = input("Enter a description for the maintenance: ")
+        title = f"🚀 Deployment Announce -\n {monitor_name} is now under maintenance"
+        description = capture_multiline_input()
+        print("(^__^) wait...")
+
+        print("(^__^) notifying...")
+        send_slack_notification(slack_hook, title, description)
+        print("(^__^) putting maintenance...")
         create_maintenance(api, monitor_id, monitor_name, description)
 
     api.disconnect()
