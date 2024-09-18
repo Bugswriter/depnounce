@@ -96,7 +96,7 @@ def create_maintenance(api, monitor_id, monitor_name, description):
 @retry_on_unauthenticated
 def remove_maintenance(api):
     print("\n (^__^) Listing all maintenances...")
-    maintenances = api.get_maintenance_list()
+    maintenances = api.get_maintenances()
     for maintenance in maintenances:
         print(f"ID: {maintenance['id']}, Title: {maintenance['title']}, Active: {maintenance['active']}")
     
