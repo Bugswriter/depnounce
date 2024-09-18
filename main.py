@@ -93,6 +93,12 @@ def create_maintenance(api, monitor_id, monitor_name, description):
         print("No status pages found.")
 
 @retry_on_unauthenticated
+def list_maintenances(api):
+    maintenances = api.get_maintenances()
+    for maintenance in maintenances:
+        print(f"ID: {maintenance['id']}, Title: {maintenance['title']}, Active: {maintenance['active']}")
+
+@retry_on_unauthenticated
 def remove_maintenance(api):
     maintenance_id = input("Enter the maintenance ID to remove: ")
     try:
