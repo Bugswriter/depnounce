@@ -46,6 +46,7 @@ def retry_on_unauthenticated(api_func):
 
 @retry_on_unauthenticated
 def list_monitors(api):
+    print("(^__^) Fetching monitors...")
     monitors = api.get_monitors()
     for idx, monitor in enumerate(monitors, start=1):
         print(f"{idx}. {monitor['name']}")
@@ -148,11 +149,9 @@ def main():
     login(api, os.getenv('KUMA_USER'), os.getenv('KUMA_PASS'))
 
     if args.remove:
-        print("\n (^__^) Listing all maintenances...")
         _id = remove_maintenance(api)
         send_slack_notification(os.getenv('SLACK_HOOK'), "🚀 *Deployment Done*", f"Maintenance ID: {_id}")
     else:
-        print("(^__^) Fetching monitors...")
         monitors = list_monitors(api)
         monitor_id, monitor_name = select_monitor(monitors)
         description = capture_multiline_input()
