@@ -115,7 +115,10 @@ def main():
     slack_hook = os.getenv('SLACK_HOOK')
 
     api = UptimeKumaApi(kuma_host)
+    api.login(kuma_user, kuma_pass)
+    print("(^__^) Login successful")
 
+    '''
     if os.path.exists(".token"):
         # Load and use the saved token
         token = load_token(".token")
@@ -142,6 +145,7 @@ def main():
             else:
                 print("(;__;) Failed to login with TOTP.")
                 return
+    '''
 
     if args.remove:
         print("\n (^__^) Listing all maintenances...")
