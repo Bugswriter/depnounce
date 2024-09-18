@@ -50,6 +50,17 @@ def list_monitors(api):
         print(f"{idx}. {monitor['name']}")
     return monitors
 
+def select_monitor(monitors):
+    while True:
+        try:
+            choice = int(input("(^__^) Select a monitor by number: "))
+            if 1 <= choice <= len(monitors):
+                return monitors[choice - 1]['id'], monitors[choice - 1]['name']
+            else:
+                print("Invalid choice. Please select a valid monitor number.")
+        except ValueError:
+            print("Please enter a number.")
+
 @retry_on_unauthenticated
 def create_maintenance(api, monitor_id, monitor_name, description):
     now = datetime.now()
