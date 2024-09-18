@@ -32,16 +32,17 @@ def login(api, kuma_user, kuma_pass, token_file=".token"):
 def retry_on_unauthenticated(api_func):
     """Decorator to retry API call on 'You are not logged in' exception."""
     def wrapper(api, *args, **kwargs):
-        try:
-            return api_func(api, *args, **kwargs)
-        except UptimeKumaException as e:
-            if 'You are not logged in' in str(e):
-                print("Session expired. Re-authenticating...")
-                login(api, os.getenv('KUMA_USER'), os.getenv('KUMA_PASS'))
-                # Retry the function after re-authentication with fresh state
+        max_retries = 10
+        for attempt in range(max_retries):
+            try:
                 return api_func(api, *args, **kwargs)
-            else:
-                raise e
+            except UptimeKumaException as e:
+                if 'You are not logged in' in str(e):
+                    print(f"Session expired. Re-authenticating... (Attempt {attempt + 1}/{max_retries})")
+                    login(api, os.getenv('KUMA_USER'), os.getenv('KUMA_PASS'))
+                else:
+                    raise e
+        raise UptimeKumaException("Failed after maximum retries due to session issues.")
     return wrapper
 
 @retry_on_unauthenticated
