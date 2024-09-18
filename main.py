@@ -38,6 +38,7 @@ def retry_on_unauthenticated(api_func):
             if 'You are not logged in' in str(e):
                 print("Session expired. Re-authenticating...")
                 login(api, os.getenv('KUMA_USER'), os.getenv('KUMA_PASS'))
+                # Retry the function after re-authentication with fresh state
                 return api_func(api, *args, **kwargs)
             else:
                 raise e
@@ -93,13 +94,12 @@ def create_maintenance(api, monitor_id, monitor_name, description):
         print("No status pages found.")
 
 @retry_on_unauthenticated
-def list_maintenances(api):
-    maintenances = api.get_maintenances()
+def remove_maintenance(api):
+    print("\n (^__^) Listing all maintenances...")
+    maintenances = api.get_maintenance_list()
     for maintenance in maintenances:
         print(f"ID: {maintenance['id']}, Title: {maintenance['title']}, Active: {maintenance['active']}")
-
-@retry_on_unauthenticated
-def remove_maintenance(api):
+    
     maintenance_id = input("Enter the maintenance ID to remove: ")
     try:
         api.delete_maintenance(int(maintenance_id))
@@ -149,7 +149,6 @@ def main():
 
     if args.remove:
         print("\n (^__^) Listing all maintenances...")
-        list_maintenances(api)
         _id = remove_maintenance(api)
         send_slack_notification(os.getenv('SLACK_HOOK'), "🚀 *Deployment Done*", f"Maintenance ID: {_id}")
     else:
